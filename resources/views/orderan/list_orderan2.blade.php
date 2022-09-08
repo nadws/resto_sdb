@@ -220,7 +220,7 @@
             <td>
                 rp voucher <br>
                 <input type="text" class="form-control" id="rupiah" name="voucher" readonly>
-                <input type="hidden" class="form-control ttl_hrg" name="sub" value="<?= $total2 ?>" readonly>
+                <input type="hidden" class="form-control ttl_hrg" name="sub" value="<?= $total2 + $total2_majo ?>" readonly>
                 <input type="hidden" class="form-control servis1" name="service" value="<?= $service ?>" readonly>
                 <input type="hidden" class="form-control tax1" name="tax" value="<?= $tax ?>" readonly>
 
