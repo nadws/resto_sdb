@@ -104,7 +104,7 @@ class OrderanController extends Controller
         $id_lokasi = $request->session()->get('id_lokasi');
         $no = $request->no;
         $transaksi = DB::table('tb_transaksi')->where('no_order', $no)->get();
-        $order = DB::select("SELECT a.id_order, a.id_harga, b.nm_menu, a.qty, a.request, c.nama AS koki1 , d.nama AS koki2, e.nama AS koki3, a.id_distribusi,
+        $order = DB::select("SELECT a.id_order, a.id_harga, b.nm_menu,b.id_menu, a.qty, a.request, c.nama AS koki1 , d.nama AS koki2, e.nama AS koki3, a.id_distribusi,
         a.pengantar, a.id_meja, a.j_mulai, a.j_selesai, a.wait, a.selesai, a.harga,
         timestampdiff(MINUTE, a.j_mulai,a.wait) AS selisih, if(f.qty IS NULL ,0,f.qty) AS qty2, g.nm_meja
         FROM tb_order as a 
@@ -143,10 +143,13 @@ class OrderanController extends Controller
 
     public function save_transaksi(Request $request)
     {
+
         $no_order = $request->no_order;
+        $idMenu = $request->id_menuResep;
         $id_order = $request->id_order;
         $id_harga = $request->id_harga;
         $qty = $request->qty;
+
         $qty_majo = $request->qty_majo;
         $id_pembelian = $request->id_pembelian;
         $total_majo = $request->total_majo;
@@ -163,6 +166,31 @@ class OrderanController extends Controller
             DB::raw("SELECT MAX(RIGHT(a.no_order2,4)) AS kd_max FROM tb_order2 AS a
         WHERE DATE(a.tgl)=CURDATE() AND a.id_lokasi = '$lokasi' AND a.id_distribusi = '$id_distribusi'"),
         );
+
+
+        // tmabahan resep
+        foreach ($idMenu as $index => $i) {
+
+            if ($qty[$index] != 0) {
+                $resep = DB::table('tb_resep')->where('id_menu', $i)->get();
+                foreach ($resep as $r) {
+                    $data_resep = [
+                        'tgl' => date('Y-m-d'),
+                        'id_bahan' => $r->id_list_bahan,
+                        'id_satuan' => $r->id_satuan,
+                        'kredit' => $r->qty,
+                        'debit' => 0,
+                        'admin' => Auth::user()->nama,
+                        'no_nota' => $no_order,
+                        'id_satuan_beli' => '0',
+                    ];
+
+                    DB::table('stok_ts')->insert($data_resep);
+                }
+            }
+        }
+        // --------------
+
         $kd = '';
         if (count($q) > 0) {
             foreach ($q as $k) {
@@ -179,11 +207,9 @@ class OrderanController extends Controller
             ->where('id_distribusi', $id_distribusi)
             ->first();
         $kode = substr($dis->nm_distribusi, 0, 2);
-        if ($lokasi == '1') {
-            $hasil = "T$kode-$no_invoice";
-        } else {
-            $hasil = "S$kode-$no_invoice";
-        }
+
+        $hasil = $lokasi == 1 ? "T$kode-$no_invoice" : "S$kode-$no_invoice";
+
         $data = [
             'no_invoice' => $hasil,
             'tanggal' => date('Y-m-d'),
@@ -214,8 +240,7 @@ class OrderanController extends Controller
                 Order2::create($data);
             }
         }
-        if(empty($id_pembelian)) {
-            
+        if (empty($id_pembelian)) {
         } else {
             for ($x = 0; $x < sizeof($id_pembelian); $x++) {
                 if ($qty_majo[$x] == '' || $qty_majo[$x] == '0') {
@@ -227,17 +252,20 @@ class OrderanController extends Controller
                     Pembelian::where('id_pembelian', $request->id_pembelian[$x])->update($data);
                 }
             }
-            $data6 = [
-                'bayar' => $request->total_dibayar < 1 ? 0 : $total_majo,
-                'no_nota' => $hasil,
-                'total' => $request->total_dibayar < 1 ? 0 : $total_majo,
-                'tgl_jam' => date('Y-m-d'),
-                'tgl_input' => date('Y-m-d H:i:s'),
-                'admin' => Auth::user()->nama,
-                'lokasi' => $lokasi,
-                'id_distribusi' => $id_distribusi
-            ];
-            DB::table('tb_invoice')->insert($data6);
+            if ($request->total_dibayar < $total_majo) {
+            } else {
+                $data6 = [
+                    'bayar' => $request->total_dibayar < 1 ? 0 : $total_majo,
+                    'no_nota' => $hasil,
+                    'total' => $request->total_dibayar < 1 ? 0 : $total_majo,
+                    'tgl_jam' => date('Y-m-d'),
+                    'tgl_input' => date('Y-m-d H:i:s'),
+                    'admin' => Auth::user()->nama,
+                    'lokasi' => $lokasi,
+                    'id_distribusi' => $id_distribusi
+                ];
+                DB::table('tb_invoice')->insert($data6);
+            }
         }
 
         $data = [
@@ -287,8 +315,11 @@ class OrderanController extends Controller
             ];
             Ctt_driver::create($data4);
         }
+
+
+
         $ttl = $request->total_dibayar;
-        $sub = $request->sub;
+        $sub = $request->sub + $request->total_majo;
         $tax = $request->tax;
         $okir = $request->ongkir;
         $service = $request->service;
@@ -315,9 +346,9 @@ class OrderanController extends Controller
         $hs = Akun::where([['id_lokasi', $lokasi], ['nm_akun', 'Hutang Service Charge 7%']])->first();
         $pd = Akun::where([['id_lokasi', $lokasi], ['nm_akun', 'Pb1 Pajak Daerah 10%']])->first();
         $pdd = Akun::where([['id_lokasi', $lokasi], ['nm_akun', 'Pendapatan dibayar dimuka']])->first();
-        
-        
-        if($dp > 0) {
+
+
+        if ($dp > 0) {
             $kode_akun = Jurnal::where('id_akun', $pdd->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
             if ($kode_akun == 0) {
                 $kode_akun = 1;
@@ -338,21 +369,21 @@ class OrderanController extends Controller
             ];
             Jurnal::create($pdd);
 
-            if($request->kembalian1 > 0) {
-                $kode_akun = Jurnal::where('id_akun',$kas->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
-    
+            if ($request->kembalian1 > 0) {
+                $kode_akun = Jurnal::where('id_akun', $kas->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
+
                 if ($kode_akun == 0) {
                     $kode_akun = 1;
                 } else {
                     $kode_akun += 1;
                 }
-                
+
                 $csh = [
                     'id_buku' => 1,
                     'id_lokasi' => $lokasi,
-                    'id_akun' =>$kas->id_akun,
+                    'id_akun' => $kas->id_akun,
                     'kd_gabungan' => $hasil,
-                    'no_nota' =>$kas->kd_akun . date('Y-m') . '-' . $kode_akun,
+                    'no_nota' => $kas->kd_akun . date('Y-m') . '-' . $kode_akun,
                     'debit' => 0,
                     'kredit' => $request->kembalian1,
                     'tgl' => date('Y-m-d'),
@@ -361,8 +392,7 @@ class OrderanController extends Controller
                 ];
                 Jurnal::create($csh);
                 $totKembali = $disc > 0 ? $sub * (100 - $disc) / 100 - $voucher : $sub - $voucher;
-                if($totKembali < 0) {
-
+                if ($totKembali < 0) {
                 } else {
                     $pjlc = [
                         'id_buku' => 1,
@@ -377,7 +407,7 @@ class OrderanController extends Controller
                         'admin' => Auth::user()->nama,
                     ];
                     Jurnal::create($pjlc);
-        
+
                     $pdpll = [
                         'id_buku' => 1,
                         'id_lokasi' => $lokasi,
@@ -391,8 +421,8 @@ class OrderanController extends Controller
                         'admin' => Auth::user()->nama,
                     ];
                     Jurnal::create($pdpll);
-        
-                    if($okir != 0) {
+
+                    if ($okir != 0) {
                         $hutong = [
                             'id_buku' => 1,
                             'id_lokasi' => $lokasi,
@@ -407,8 +437,8 @@ class OrderanController extends Controller
                         ];
                         Jurnal::create($hutong);
                     }
-                    
-        
+
+
                     $hsc = [
                         'id_buku' => 1,
                         'id_lokasi' => $lokasi,
@@ -422,7 +452,7 @@ class OrderanController extends Controller
                         'admin' => Auth::user()->nama,
                     ];
                     Jurnal::create($hsc);
-        
+
                     $ppd = [
                         'id_buku' => 1,
                         'id_lokasi' => $lokasi,
@@ -438,10 +468,9 @@ class OrderanController extends Controller
                     Jurnal::create($ppd);
                 }
             }
-
         }
 
-        if($d_bca) {
+        if ($d_bca) {
             $kode_akun = Jurnal::where('id_akun', $debca->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
 
             if ($kode_akun == 0) {
@@ -449,7 +478,7 @@ class OrderanController extends Controller
             } else {
                 $kode_akun += 1;
             }
-          
+
             $dbca = [
                 'id_buku' => 1,
                 'id_lokasi' => $lokasi,
@@ -464,21 +493,21 @@ class OrderanController extends Controller
             ];
             Jurnal::create($dbca);
         }
-        if($k_bca) {
-            $kode_akun = Jurnal::where('id_akun',$krbca->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
+        if ($k_bca) {
+            $kode_akun = Jurnal::where('id_akun', $krbca->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
 
             if ($kode_akun == 0) {
                 $kode_akun = 1;
             } else {
                 $kode_akun += 1;
             }
-            
+
             $kbca = [
                 'id_buku' => 1,
                 'id_lokasi' => $lokasi,
-                'id_akun' =>$krbca->id_akun,
+                'id_akun' => $krbca->id_akun,
                 'kd_gabungan' => $hasil,
-                'no_nota' =>$krbca->kd_akun . date('Y-m') . '-' . $kode_akun,
+                'no_nota' => $krbca->kd_akun . date('Y-m') . '-' . $kode_akun,
                 'debit' => $k_bca <= $ttl ? $k_bca : $k_bca - $kembalian,
                 'kredit' => 0,
                 'tgl' => date('Y-m-d'),
@@ -487,7 +516,7 @@ class OrderanController extends Controller
             ];
             Jurnal::create($kbca);
         }
-        if($d_mandiri) {
+        if ($d_mandiri) {
             $kode_akun = Jurnal::where('id_akun', $dmandiri->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
 
             if ($kode_akun == 0) {
@@ -495,7 +524,7 @@ class OrderanController extends Controller
             } else {
                 $kode_akun += 1;
             }
-           
+
             $dman = [
                 'id_buku' => 1,
                 'id_lokasi' => $lokasi,
@@ -510,7 +539,7 @@ class OrderanController extends Controller
             ];
             Jurnal::create($dman);
         }
-        if($k_mandiri) {
+        if ($k_mandiri) {
             $kode_akun = Jurnal::where('id_akun', $kamndiri->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
 
             if ($kode_akun == 0) {
@@ -518,7 +547,7 @@ class OrderanController extends Controller
             } else {
                 $kode_akun += 1;
             }
-       
+
             $kman = [
                 'id_buku' => 1,
                 'id_lokasi' => $lokasi,
@@ -533,21 +562,21 @@ class OrderanController extends Controller
             ];
             Jurnal::create($kman);
         }
-        if($cash) {
-            $kode_akun = Jurnal::where('id_akun',$kas->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
+        if ($cash) {
+            $kode_akun = Jurnal::where('id_akun', $kas->id_akun)->whereMonth('tgl', $month)->whereYear('tgl', $year)->count();
 
             if ($kode_akun == 0) {
                 $kode_akun = 1;
             } else {
                 $kode_akun += 1;
             }
-          
+
             $csh = [
                 'id_buku' => 1,
                 'id_lokasi' => $lokasi,
-                'id_akun' =>$kas->id_akun,
+                'id_akun' => $kas->id_akun,
                 'kd_gabungan' => $hasil,
-                'no_nota' =>$kas->kd_akun . date('Y-m') . '-' . $kode_akun,
+                'no_nota' => $kas->kd_akun . date('Y-m') . '-' . $kode_akun,
                 'debit' => $cash - $kembalian,
                 'kredit' => 0,
                 'tgl' => date('Y-m-d'),
@@ -556,9 +585,8 @@ class OrderanController extends Controller
             ];
             Jurnal::create($csh);
         }
-        if(!$cash && $d_bca || !$cash && $k_bca || !$cash && $d_mandiri || !$cash && $k_mandiri || $cash && $d_bca && $k_bca && $d_mandiri && $k_mandiri || $cash) 
-        {
-            
+        if (!$cash && $d_bca || !$cash && $k_bca || !$cash && $d_mandiri || !$cash && $k_mandiri || $cash && $d_bca && $k_bca && $d_mandiri && $k_mandiri || $cash) {
+
             $subTotal = $disc > 0 ? $sub * (100 - $disc) / 100 - $voucher : $sub - $voucher;
             $pjlc = [
                 'id_buku' => 1,
@@ -588,7 +616,7 @@ class OrderanController extends Controller
             ];
             Jurnal::create($pdpll);
 
-            if($okir != 0) {
+            if ($okir != 0) {
                 $hutong = [
                     'id_buku' => 1,
                     'id_lokasi' => $lokasi,
@@ -603,7 +631,7 @@ class OrderanController extends Controller
                 ];
                 Jurnal::create($hutong);
             }
-            
+
 
             $hsc = [
                 'id_buku' => 1,
@@ -738,7 +766,7 @@ class OrderanController extends Controller
             'no_order' => $id,
             'pesan_2'    => DB::select("SELECT a.*, sum(a.qty) as sum_qty ,  b.nm_meja FROM tb_order as a left join tb_meja as b on a.id_meja = b.id_meja where a.no_order = '$id' group by a.no_order"),
         ];
-        
+
         return view('meja.print_all', $data);
     }
 

@@ -132,6 +132,11 @@
 
                     </ul>
                 </li>
+                <li>
+                    <a href="{{ route('produk') }}"><img
+                            src="https://ptagafood.com/assets/img_menu/stock.png"><span>STK</span>
+                    </a>
+                </li>
 
                 <?php } ?>
             </ul>

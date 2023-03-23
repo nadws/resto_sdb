@@ -2,7 +2,7 @@
     @foreach ($karyawan as $k)
     <div class="col-lg-2 col-4">
         <label class="btn btn-default buying-selling">
-            <div class="checkbox-group required">
+            <div class="checkbox-group">
                 <input type="checkbox" name="kd_karyawan" value="{{$k->kd_karyawan }}" autocomplete="off"
                     class="cart_id_karyawan option1">
             </div>

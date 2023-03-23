@@ -161,6 +161,9 @@
         .modal-lg-max2 {
             max-width: 1200px;
         }
+        .select {
+            width: 100% !important;
+        }
 
     </style>
     <form>

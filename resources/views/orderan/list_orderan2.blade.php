@@ -49,6 +49,7 @@
                 <?= $o->nm_menu ?>
             </td>
             <td style="white-space: nowrap;">
+                <input type="hidden" name="id_menuResep[]" value="{{ $o->id_menu }}">
                 <!-- <a href=""><i class="fas fa-minus"></i></a> -->
                 <input name="qty[]" type="number" max="<?= $o->qty ?>" min="0" detail="<?= $no ?>"
                     class="text-center qty form-control" value="<?= $o->qty ?>">
@@ -220,7 +221,7 @@
             <td>
                 rp voucher <br>
                 <input type="text" class="form-control" id="rupiah" name="voucher" readonly>
-                <input type="hidden" class="form-control ttl_hrg" name="sub" value="<?= $total2 + $total2_majo ?>" readonly>
+                <input type="hidden" class="form-control ttl_hrg" name="sub" value="<?= $total2 ?>" readonly>
                 <input type="hidden" class="form-control servis1" name="service" value="<?= $service ?>" readonly>
                 <input type="hidden" class="form-control tax1" name="tax" value="<?= $tax ?>" readonly>
 

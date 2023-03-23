@@ -173,7 +173,7 @@ class OrderController extends Controller
         $meja = DB::select(
             DB::raw("SELECT *
         FROM tb_meja AS a
-        WHERE a.id_meja NOT IN (SELECT b.id_meja from tb_order AS b WHERE b.tgl = '$date' or b.aktif = '1' ) and a.id_lokasi = '$id_lokasi' and a.id_distribusi = '$id_me'"),
+        WHERE a.id_meja NOT IN (SELECT b.id_meja from tb_order AS b WHERE b.tgl = '$date' and b.aktif = '1' and b.void != 1) and a.id_lokasi = '$id_lokasi' and a.id_distribusi = '$id_me'"),
         );
 
         foreach ($meja as $m) {
@@ -277,10 +277,12 @@ class OrderController extends Controller
         LEFT JOIN(SELECT SUM(qty) as jml_jual, tb_harga.id_menu FROM tb_order LEFT JOIN tb_harga ON tb_order.id_harga = tb_harga.id_harga WHERE tb_order.id_lokasi = $id_lokasi AND tb_order.tgl = '$date' AND tb_order.void = 0 GROUP BY tb_harga.id_menu) dt_order ON tb_menu.id_menu = dt_order.id_menu
         LEFT JOIN(SELECT id_menu,batas_limit FROM tb_limit WHERE tgl = '$date' AND id_lokasi = $id_lokasi GROUP BY id_menu)dt_limit ON tb_menu.id_menu = dt_limit.id_menu
         WHERE lokasi = $id_lokasi AND tb_menu.id_menu = $detail->id_menu");
+    
+
         if ($dt_limit->batas_limit > 0 && $dt_limit->jml_jual + $qty > $dt_limit->batas_limit) {
             echo $dt_limit->batas_limit - $dt_limit->jml_jual;
         } else {
-            Cart::add(['id' => $id, 'name' => $nama, 'price' => $price, 'qty' => $qty, 'options' => ['req' => $req,'nm_karyawan' => [$karyawan], 'program' => 'resto', 'id_menu' => $id_menu, 'tipe' => $tipe]]);
+            $c = Cart::add(['id' => $id, 'name' => $nama, 'price' => $price, 'qty' => $qty, 'options' => ['req' => $req,'nm_karyawan' => [$karyawan], 'program' => 'resto', 'id_menu' => $id_menu, 'tipe' => $tipe]]);
             echo 'berhasil';
         }
     }
@@ -521,8 +523,6 @@ class OrderController extends Controller
 
                 $id_pembelian = $dataInsert->id;
 
-
-
                 $stok_baru = [
                     'stok' => $d_produk->stok -  $c->qty
                 ];
@@ -576,9 +576,43 @@ class OrderController extends Controller
         $id_lokasi = $request->session()->get('id_lokasi');
         $id_dis = $request->id_dis;
         if ($id_dis == '1') {
-            $produk =  DB::table('tb_produk')->where('id_lokasi', "$id_lokasi")->where('id_kategori', '!=', '11')->get();
+            $produk =  DB::select("SELECT a.id_produk, a.komisi,  a.nm_produk, a.sku, a.harga, b.satuan , c.nm_kategori, a.id_lokasi, d.debit, d.kredit,e.kredit_penjualan
+            FROM tb_produk AS a
+            LEFT JOIN tb_satuan_majo AS b ON b.id_satuan = a.id_satuan
+            LEFT JOIN tb_kategori_majo AS c ON c.id_kategori = a.id_kategori
+            
+            LEFT JOIN (
+            SELECT d.id_produk, SUM(d.debit) AS debit, SUM(d.kredit) AS kredit
+            FROM tb_stok_produk AS d 
+            GROUP BY d.id_produk
+            ) AS d ON d.id_produk = a.id_produk
+
+            LEFT JOIN (
+            SELECT e.id_produk , SUM(e.jumlah) AS kredit_penjualan
+            FROM tb_pembelian AS e 
+            GROUP BY e.id_produk
+            )AS e ON e.id_produk = a.id_produk
+            
+            WHERE a.id_lokasi = '$id_lokasi' and a.id_kategori != '11'");
         } else {
-            $produk =  DB::table('tb_produk')->where('id_lokasi', "$id_lokasi")->where('id_kategori', '=', '11')->get();
+            $produk =  DB::select("SELECT a.id_produk, a.komisi,  a.nm_produk, a.sku, a.harga, b.satuan , c.nm_kategori, a.id_lokasi, d.debit, d.kredit,e.kredit_penjualan
+            FROM tb_produk AS a
+            LEFT JOIN tb_satuan_majo AS b ON b.id_satuan = a.id_satuan
+            LEFT JOIN tb_kategori_majo AS c ON c.id_kategori = a.id_kategori
+            
+            LEFT JOIN (
+            SELECT d.id_produk, SUM(d.debit) AS debit, SUM(d.kredit) AS kredit
+            FROM tb_stok_produk AS d 
+            GROUP BY d.id_produk
+            ) AS d ON d.id_produk = a.id_produk
+
+            LEFT JOIN (
+            SELECT e.id_produk , SUM(e.jumlah) AS kredit_penjualan
+            FROM tb_pembelian AS e 
+            GROUP BY e.id_produk
+            )AS e ON e.id_produk = a.id_produk
+            
+            WHERE a.id_lokasi = '$id_lokasi' and a.id_kategori = '11'");
         }
 
         $data = [
@@ -597,17 +631,46 @@ class OrderController extends Controller
         }
 
         if ($id_dis == '1') {
-            $vm = DB::table('tb_produk')
-                ->where('id_lokasi', "$id_lokasi")
-                ->where('id_kategori', '!=', "11")
-                ->where('nm_produk', 'LIKE', '%' . $request->keyword . '%')
-                ->get();
+
+
+            $vm = DB::select("SELECT a.id_produk, a.komisi,  a.nm_produk, a.sku, a.harga, b.satuan , c.nm_kategori, a.id_lokasi, d.debit, d.kredit,e.kredit_penjualan
+                FROM tb_produk AS a
+                LEFT JOIN tb_satuan_majo AS b ON b.id_satuan = a.id_satuan
+                LEFT JOIN tb_kategori_majo AS c ON c.id_kategori = a.id_kategori
+                
+                LEFT JOIN (
+                SELECT d.id_produk, SUM(d.debit) AS debit, SUM(d.kredit) AS kredit
+                FROM tb_stok_produk AS d 
+                GROUP BY d.id_produk
+                ) AS d ON d.id_produk = a.id_produk
+    
+                LEFT JOIN (
+                SELECT e.id_produk , SUM(e.jumlah) AS kredit_penjualan
+                FROM tb_pembelian AS e 
+                GROUP BY e.id_produk
+                )AS e ON e.id_produk = a.id_produk
+                
+                WHERE a.id_lokasi = '$id_lokasi' and a.id_kategori != '11' and a.nm_produk LIKE '%$request->keyword%'");
         } else {
-            $vm = DB::table('tb_produk')
-                ->where('id_lokasi', "$id_lokasi")
-                ->where('id_kategori', '=', "11")
-                ->where('nm_produk', 'LIKE', '%' . $request->keyword . '%')
-                ->get();
+
+            $vm = DB::select("SELECT a.id_produk, a.komisi,  a.nm_produk, a.sku, a.harga, b.satuan , c.nm_kategori, a.id_lokasi, d.debit, d.kredit,e.kredit_penjualan
+            FROM tb_produk AS a
+            LEFT JOIN tb_satuan_majo AS b ON b.id_satuan = a.id_satuan
+            LEFT JOIN tb_kategori_majo AS c ON c.id_kategori = a.id_kategori
+            
+            LEFT JOIN (
+            SELECT d.id_produk, SUM(d.debit) AS debit, SUM(d.kredit) AS kredit
+            FROM tb_stok_produk AS d 
+            GROUP BY d.id_produk
+            ) AS d ON d.id_produk = a.id_produk
+
+            LEFT JOIN (
+            SELECT e.id_produk , SUM(e.jumlah) AS kredit_penjualan
+            FROM tb_pembelian AS e 
+            GROUP BY e.id_produk
+            )AS e ON e.id_produk = a.id_produk
+            
+            WHERE a.id_lokasi = '$id_lokasi' and a.id_kategori = '11' and a.nm_produk LIKE '%$request->keyword%'");
         }
 
 
@@ -619,6 +682,7 @@ class OrderController extends Controller
 
         return view('order.search_majo', $data)->render();
     }
+
     public function get_harga_majoo(Request $request)
     {
         $id_produk = $request->id_produk;
@@ -650,7 +714,6 @@ class OrderController extends Controller
         $satuan = $r->satuan;
         $catatan = $r->catatan;
         $id_karyawan = $r->kd_karyawan;
-
 
         $qty = 0;
         foreach (Cart::content() as $cart) {
@@ -695,5 +758,25 @@ class OrderController extends Controller
                 Cart::add($data);
             }
         }
+    }
+
+    public function produk(Request $r)
+    {
+        $id_user = Auth::user()->id;
+        $id_lokasi = $r->session()->get('id_lokasi');
+        $data = [
+            'title' => 'Produk Majo',
+            'produk' => DB::table('tb_produk as a')
+                ->join('tb_satuan_majo as b', 'a.id_satuan', '=', 'b.id_satuan')
+                ->join('tb_kategori_majo as c', 'a.id_kategori', '=', 'c.id_kategori')
+                ->where('a.id_lokasi', $id_lokasi)
+                ->orderBy('a.id_produk', 'DESC')
+                ->get(),
+            'kategori' => DB::table('tb_kategori_majo')->get(),
+            'satuan' => DB::table('tb_satuan_majo')->get(),
+
+            'logout' => $r->session()->get('logout'),
+        ];
+        return view("produk.index", $data);
     }
 }

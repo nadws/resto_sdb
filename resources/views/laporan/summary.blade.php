@@ -264,7 +264,7 @@ $total_total = $total_gojek->total + $total_not_gojek->total + $service_charge +
                 <td style="white-space: nowrap;"><?= $k->kategori ?></td>
                 <td width="1%">:</td>
                 <td style="text-align: center;" width="50%"><?= $k->qty ?></td>
-                <td style="text-align: right;"><?= number_format($k->qty * $k->harga, 0) ?></td>
+                <td style="text-align: right;"><?= number_format($k->harga, 0) ?></td>
             </tr>
             <?php endforeach ?>
             <tr>

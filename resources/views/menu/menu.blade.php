@@ -25,8 +25,8 @@
 
 
                                 <h5>Data Menu {{ $id_lokasi == 1 ? 'Takemori' : 'Soondobu' }}</h5>
-                                <a href="" data-toggle="modal" data-target="#tambah" class="btn btn-info float-right"><i
-                                        class="fas fa-plus"></i> Tambah Menu</a>
+                                <a href="" data-toggle="modal" data-target="#tambah"
+                                    class="btn btn-info float-right"><i class="fas fa-plus"></i> Tambah Menu</a>
                                 <a href="" data-toggle="modal" data-target="#import"
                                     class="mr-2 btn btn-info float-right"><i class="fas fa-file-import"></i> Import</a>
                                 <a href="{{ route('exportMenu', ['lokasi' => $id_lokasi]) }}"
@@ -78,10 +78,15 @@
                                                     @foreach ($harga as $h)
                                                         :{{ number_format($h->harga, 0) }} <br>
                                                     @endforeach
-                                                    <a href="" data-toggle="modal"
-                                                        data-target="#distribusi{{ $m->id_menu }}" class="btn btn-new"
-                                                        style="background-color: #F7F7F7;"><i style="color: #B0BEC5;"><i
-                                                                class="fas fa-plus"></i></a>
+                                                    <a href="" data-placement="top" title="Tambah Distribusi"
+                                                        data-toggle="tooltip" class="btn btn-new btnPlusDistribusi"
+                                                        id_menu="{{ $m->id_menu }}" style="background-color: #F7F7F7;"><i
+                                                            style="color: #B0BEC5;"><i class="fas fa-plus"></i></a>
+
+                                                    <a href="#" data-placement="top" title="Tambah Resep"
+                                                        data-toggle="tooltip" class="btn btn-new btnPlusResep"
+                                                        id_menu="{{ $m->id_menu }}" style="background-color: #F7F7F7;"><i
+                                                            style="color: #B0BEC5;"><i class="fas fa-plus"></i></a>
                                                 </td>
                                                 <td>
                                                     <label class="switch float-left">
@@ -109,7 +114,8 @@
                                                 <td style="white-space: nowrap;">
                                                     <a href="" data-toggle="modal"
                                                         data-target="#edit_data{{ $m->id_menu }}"
-                                                        id_menu="{{ $m->id_menu }}" class="btn edit_menu btn-new"
+                                                        id_menu="{{ $m->id_menu }}" id_lokasi="{{ $m->lokasi }}"
+                                                        class="btn edit_menu btn-new editMenu"
                                                         style="background-color: #F7F7F7;"><i style="color: #B0BEC5;"><i
                                                                 class="fas fa-edit"></i></a>
                                                     <a onclick="return confirm('Apakah ingin hapus ?')"
@@ -150,129 +156,28 @@
         .modal-lg-max {
             max-width: 900px;
         }
-
     </style>
-    @foreach ($menu as $m)
-        <form action="{{ route('updateMenu') }}" enctype="multipart/form-data" method="post" accept-charset="utf-8">
-            @csrf
-            <div class="modal fade" id="edit_data{{ $m->id_menu }}" role="dialog" aria-labelledby="exampleModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-lg-max" role="document">
-                    <div class="modal-content ">
-                        <div class="modal-header btn-costume">
-                            <h5 class="modal-title text-light" id="exampleModalLabel">Edit Menu</h5>
-                            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="menu">
-                                <div class="row">
-                                    <input type="hidden" name="id_lokasi" value="{{ $id_lokasi }}">
-
-                                    <div class="col-sm-4 ol-md-6 col-xs-12 mb-2">
-                                        <input type="hidden" name="id_menu" value="{{ $m->id_menu }}">
-                                        <label for="">Image</label>
-                                        <br>
-                                        <img width="270"
-                                            src="https://upperclassindonesia.com/uploads/tb_menu/CHAWAN MUSHI 1.jpg" alt="">
-                                        <br>
-                                        <br>
-                                        <input type="file" class="form-control" name="image">
-                                        <input type="hidden" class="form-control" name="image2"
-                                            value="CHAWAN MUSHI 1.jpg">
-
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="row">
-                                            <div class="col-lg-6 mb-2">
-                                                <label for="">
-                                                    <dt>Kategori</dt>
-                                                </label>
-                                                <select name="id_kategori" id="" class="form-control select">
-                                                    @foreach ($kategori as $p)
-                                                        <option value="{{ $p->kd_kategori }}"
-                                                            {{ $p->kd_kategori == $m->id_kategori ? 'selected' : '' }}>
-                                                            {{ $p->kategori }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-lg-6 mb-2">
-                                                <label for="">
-                                                    <dt>Kode Menu</dt>
-                                                </label>
-                                                <input type="text" readonly name="kd_menu" class="form-control"
-                                                    placeholder="Kode Menu" value="{{ $m->kd_menu }}">
-                                            </div>
-                                            <div class="col-lg-6 mb-2">
-                                                <label for="">
-                                                    <dt>Nama Menu</dt>
-                                                </label>
-                                                <input type="text" name="nm_menu" class="form-control"
-                                                    placeholder="Nama Menu" value="{{ $m->nm_menu }}">
-                                            </div>
-                                            <div class="col-lg-6 mb-2">
-                                                <label for="">
-                                                    <dt>Tipe</dt>
-                                                </label>
-                                                <select class="form-control select" name="tipe">
-                                                    <option value="food">food</option>
-                                                    <option value="drink">drink</option>
-                                                </select>
-                                            </div>
-                                            @php
-                                                $harga = DB::table('tb_harga')
-                                                    ->select('tb_harga.*', 'tb_distribusi.*')
-                                                    ->join('tb_distribusi', 'tb_harga.id_distribusi', '=', 'tb_distribusi.id_distribusi')
-                                                    ->where('id_menu', $m->id_menu)
-                                                    ->get();
-                                                $no = 1;
-                                                
-                                            @endphp
-                                            @foreach ($harga as $h)
-                                                <div class="col-lg-5 mb-2">
-                                                    <label for="">
-                                                        <input type="hidden" value="{{ $h->id_harga }}"
-                                                            name="id_harga[]">
-                                                        <dt>Distribusi</dt>
-                                                    </label>
-                                                    <select name="id_distribusi[]" id="" class="form-control select">
-                                                        @foreach ($distribusi as $d)
-                                                            @if ($h->id_distribusi == $d->id_distribusi)
-                                                                <option selected value="{{ $h->id_distribusi }}">
-                                                                    {{ $h->nm_distribusi }}
-                                                                </option>
-                                                            @else
-                                                                <option value="{{ $d->id_distribusi }}">
-                                                                    {{ $d->nm_distribusi }}
-                                                                </option>
-                                                            @endif
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-
-                                                <div class="col-lg-5 mb-2">
-                                                    <label for="">
-                                                        <dt>Harga</dt>
-                                                    </label>
-                                                    <input type="text" name="harga[]" class="form-control"
-                                                        placeholder="Harga" value="{{ $h->harga }}">
-                                                </div>
-                                            @endforeach
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-info">Edit/Save</button>
-                        </div>
+    <form action="{{ route('updateMenu') }}" enctype="multipart/form-data" method="post" accept-charset="utf-8">
+        @csrf
+        <div class="modal fade" id="edit_data" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg-max" role="document">
+                <div class="modal-content ">
+                    <div class="modal-header btn-costume">
+                        <h5 class="modal-title text-light" id="exampleModalLabel">Edit Menu</h5>
+                        <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="menu"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-info">Edit/Save</button>
                     </div>
                 </div>
             </div>
-        </form>
-    @endforeach
+        </div>
+    </form>
     <form action="{{ route('importMenu') }}" enctype="multipart/form-data" method="post">
         @csrf
         <div class="modal fade" id="import" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -305,51 +210,76 @@
         </div>
     </form>
     {{-- tambah distribusi --}}
-    @foreach ($menu as $m)
-        <form action="{{ route('plusDistribusi') }}" method="post">
-            @csrf
-            <div class="modal fade" id="distribusi<?= $m->id_menu ?>" role="dialog" aria-labelledby="exampleModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-sm" role="document">
-                    <div class="modal-content ">
-                        <div class="modal-header btn-costume">
-                            <h5 class="modal-title text-light" id="exampleModalLabel"><?= $m->nm_menu ?></h5>
-                            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-lg-12 mb-2">
-                                    <input type="hidden" name="id_lokasi" value="{{ $id_lokasi }}">
-                                    <label for="">
-                                        <dt>Distribusi</dt>
-                                    </label>
-                                    <select name="id_distribusi" id="" class="form-control select">
-                                        <option value="">-Pilih distribusi-</option>
-                                        <?php foreach ($distribusi as $d) : ?>
-                                        <option value="<?= $d->id_distribusi ?>"><?= $d->nm_distribusi ?></option>
-                                        <?php endforeach ?>
-                                    </select>
-                                </div>
-                                <div class="col-lg-12">
-                                    <label for="">
-                                        <dt>Harga</dt>
-                                    </label>
-                                    <input type="text" name="harga" class="form-control" placeholder="Harga">
-                                    <input type="hidden" name="id_menu" class="form-control" value="<?= $m->id_menu ?>">
-                                </div>
+    <form action="{{ route('plusDistribusi') }}" method="post">
+        @csrf
+        <div class="modal fade" id="distribusi" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm" role="document">
+                <div class="modal-content ">
+                    <div class="modal-header btn-costume">
+                        <h5 class="modal-title text-light" id="exampleModalLabel">Tambah Distribusi</h5>
+                        <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-lg-12 mb-2">
+                                <input type="hidden" name="id_lokasi" value="{{ $id_lokasi }}">
+                                <input type="hidden" name="id_menu" value="" id="distribusiIdMenu">
+                                <label for="">
+                                    <dt>Distribusi</dt>
+                                </label>
+                                <select name="id_distribusi" id="" class="form-control select">
+                                    <option value="">-Pilih distribusi-</option>
+                                    <?php foreach ($distribusi as $d) : ?>
+                                    <option value="<?= $d->id_distribusi ?>"><?= $d->nm_distribusi ?></option>
+                                    <?php endforeach ?>
+                                </select>
+                            </div>
+                            <div class="col-lg-12">
+                                <label for="">
+                                    <dt>Harga</dt>
+                                </label>
+                                <input type="text" name="harga" class="form-control" placeholder="Harga">
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-info">Edit/Save</button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-info">Edit/Save</button>
                     </div>
                 </div>
             </div>
-        </form>
-    @endforeach
+        </div>
+    </form>
     {{-- ------------------- --}}
+
+    {{-- tambah resep --}}
+    <form action="{{ route('plusResep') }}" enctype="multipart/form-data" method="post">
+        @csrf
+        <div class="modal fade" id="resep" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content ">
+                    <div class="modal-header btn-costume">
+                        <h5 class="modal-title text-light" id="exampleModalLabel">Tambah Resep</h5>
+                        <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id_menu" value="" id="resepIdMenu">
+                        <input type="hidden" name="id_lokasi" value="{{ Request::get('id_lokasi') }}">
+                        <label for="">Import File Resep <a href="{{ route('formatResep') }}"
+                            class="btn btn-primary btn-xs">Download Format</a></label>
+                    <input type="file" name="file" class="form-control">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-info">Edit/Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    {{-- ----------------------- --}}
 
     {{-- tambah menu --}}
     <form action="{{ route('addMenu') }}" enctype="multipart/form-data" method="post">
@@ -401,7 +331,8 @@
                                         <label for="">
                                             <dt>Nama Menu</dt>
                                         </label>
-                                        <input type="text" name="nm_menu" class="form-control" placeholder="Nama Menu">
+                                        <input type="text" name="nm_menu" class="form-control"
+                                            placeholder="Nama Menu">
                                     </div>
                                     <div class="col-lg-6 mb-2">
                                         <label for="">
@@ -443,6 +374,29 @@
                                 </div>
                                 <div id="p_pakan">
 
+                                </div>
+
+
+                                <div class="row mt-2" x-data="{
+                                    open: false
+                                }">
+                                    <div class="col-lg-4">
+                                        <label for="checkResep" class="mt-2 ml-1">Tambah Resep</label>
+                                        <label class="switch float-left">
+                                            <input type="checkbox" class="checkResep" id="checkResep"
+                                                x-on:click="open = !open" x-bind:open="checked">
+                                            <span class="slider round"></span>
+                                            <input name="monitor" class="swalDefaultSuccess form-password form-control"
+                                                value="off" hidden>
+                                        </label>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <span x-show="open">
+                                            <label for="">Import File Resep <a href="{{ route('formatResep') }}"
+                                                    class="btn btn-primary btn-xs">Download Format</a></label>
+                                            <input type="file" name="file" class="form-control">
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -497,6 +451,9 @@
         </script>
         <script type="text/javascript">
             $(document).ready(function() {
+                $(function() {
+                    $('[data-toggle="tooltip"]').tooltip()
+                })
                 $('.form-checkbox1').click(function() {
 
                     var id_checkbox = $(this).attr("id_checkbox");
@@ -541,22 +498,54 @@
                     });
                 });
 
-                $(document).on('click', '.edit_menu', function() {
+                // $(document).on('click', '.edit_menu', function() {
+                //     var id_menu = $(this).attr("id_menu");
+                //     $.ajax({
+                //         url: "",
+                //         method: "POST",
+                //         data: {
+                //             id_menu: id_menu,
+                //         },
+                //         success: function(data) {
+                //             $('#menu').html(data);
+                //         }
+                //     });
+
+                // });
+
+                $(document).on('click', '.editMenu', function() {
                     var id_menu = $(this).attr("id_menu");
+                    var id_lokasi = "{{ Request::get('id_lokasi') }}";
+                    $('#edit_data').modal('show')
+
                     $.ajax({
-                        url: "",
-                        method: "POST",
+                        url: "{{ route('editMenu') }}",
+                        method: "GET",
                         data: {
                             id_menu: id_menu,
+                            id_lokasi: id_lokasi,
                         },
                         success: function(data) {
                             $('#menu').html(data);
+                            $('.select').select2()
                         }
                     });
+                })
 
-                });
 
+                $(document).on('click', '.btnPlusResep', function(e) {
+                    e.preventDefault()
+                    var id_menu = $(this).attr('id_menu')
+                    $('#resepIdMenu').val(id_menu)
+                    $("#resep").modal('show')
+                })
 
+                $(document).on('click', '.btnPlusDistribusi', function(e) {
+                    e.preventDefault()
+                    var id_menu = $(this).attr('id_menu')
+                    $('#distribusiIdMenu').val(id_menu)
+                    $("#distribusi").modal('show')
+                })
 
             });
         </script>

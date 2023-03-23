@@ -13,22 +13,21 @@ use App\Models\Tips;
 use App\Models\Transaksi;
 use App\Models\Voucher;
 use Illuminate\Http\Request as r;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
 
 Route::middleware('auth:sanctum')->get('/user', function (r $request) {
     return $request->user();
+});
+
+Route::get('kom', function () {
+    $data = [
+        'paket' => DB::table('tb_jumlah_orang')->get(),
+    ];
+   
+    return response()->json($data, HttpFoundationResponse::HTTP_OK);
 });
 
 Route::get('voucher', function () {

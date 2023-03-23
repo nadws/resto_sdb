@@ -53,7 +53,13 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <link rel="stylesheet" type="text/css" href=" {{ asset('public/assets') }}/dropify/dist/css/dropify.min.css">
     <link href="{{ asset('public/assets') }}/css1/bootstrap-switch-button.min.css" rel="stylesheet" />
     <link href="{{ asset('public/assets') }}/css1/bootstrap4-toggle.min.css" rel="stylesheet">
+
+    {{-- alpine js --}}
+    <script src="//unpkg.com/alpinejs" defer></script>
     <style>
+        .select {
+            width: 100% !important;
+        }
         @keyframes blinking {
             0% {
                 background-color: red
@@ -126,6 +132,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
         .subnavbar .container>ul {
             display: inline-block;
             height: 80px;
+            width: 1140px;
             padding: 0;
             margin: 0
         }
@@ -771,4 +778,6 @@ scratch. This page gets rid of all links and provides the needed markup only.
             font: 14px arial;
         }
     </style>
+    @livewireStyles
+    @livewireScripts
 </head>

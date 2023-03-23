@@ -8,6 +8,8 @@ use App\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -38,7 +40,9 @@ class MenuController extends Controller
 
                     'kategori' => DB::table('tb_kategori')->get(),
                     'distribusi' => Distribusi::all(),
-                    'id_lokasi' => $id_lokasi
+                    'id_lokasi' => $id_lokasi,
+                    'bahan' => DB::table('tb_list_bahan')->where([['id_lokasi', $id_lokasi], ['jenis', 1]])->get(),
+                    'satuan' => DB::table('tb_satuan')->whereIn('id_satuan', [12, 18, 22, 24, 25, 26])->get()
                 ];
 
                 return view("menu.menu", $data);
@@ -49,8 +53,7 @@ class MenuController extends Controller
     }
 
     public function importMenu(Request $request)
-    {
-        {
+    { {
             // include APPPATH.'third_party/PHPExcel/PHPExcel.php';
             $file = $request->file('file');
             $ext = $file->getClientOriginalExtension();
@@ -61,22 +64,22 @@ class MenuController extends Controller
             // $sheet = $loadexcel->getActiveSheet()->toArray(null, true, true ,true);
             $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
             $lokasi = $request->id_lokasi;
-    
-    
+
+
             $data = array();
             $numrow = 1;
             // cek
             $cek = 0;
             foreach ($sheet as $row) {
-    
+
                 if ($row['A'] == "" && $row['B'] == "" && $row['C'] == "" && $row['D'] == "" && $row['E'] == "" && $row['F'] == "")
                     continue;
                 $numrow++; // Tambah 1 setiap kali looping
             }
             // endcek
-    
-        
-            
+
+
+
             $kmenu = Menu::orderBy('kd_menu', 'desc')->where('lokasi', $lokasi)->first();
 
             $kd_menu = $kmenu->kd_menu + 1;
@@ -84,10 +87,10 @@ class MenuController extends Controller
             foreach ($sheet as $row) {
                 if ($row['A'] == "" && $row['B'] == "" && $row['C'] == "" && $row['D'] == "" && $row['E'] == "" && $row['F'] == "")
                     continue;
-    
-    
+
+
                 if ($numrow > 1) {
-                    
+
                     $data = [
                         'id_kategori' => $row['A'],
                         'kd_menu' => $kd_menu++,
@@ -97,7 +100,7 @@ class MenuController extends Controller
                         'lokasi' => $lokasi,
                     ];
                     $menu = Menu::create($data);
-    
+
                     if ($row['D'] == '') {
                         # code...
                     } else {
@@ -119,7 +122,7 @@ class MenuController extends Controller
                         ];
                         Harga::create($data3);
                     }
-    
+
                     if ($row['F'] == '') {
                         # code...
                     } else {
@@ -133,11 +136,9 @@ class MenuController extends Controller
                 }
                 $numrow++; // Tambah 1 setiap kali looping
             }
-    
+
             return redirect()->route('menu', ['id_lokasi' => 1])->with('sukses', 'Data berhasil Diimport');
         }
-
-        
     }
 
     public function exportMenu(Request $request)
@@ -162,7 +163,7 @@ class MenuController extends Controller
             ->setCellValue('D1', 'DINE IN')
             ->setCellValue('E1', 'DELIVERY')
             ->setCellValue('F1', 'GOJEK');
-        
+
         $sheet
             ->setCellValue('A2', '3')
             ->setCellValue('B2', 'Sosis Ayam')
@@ -188,19 +189,19 @@ class MenuController extends Controller
         $kolom = 3;
         foreach ($tkm as $k) {
             $sheet
-                ->setCellValue('I'.$kolom,$k->kd_kategori)
-                ->setCellValue('J'.$kolom,$k->kategori);
+                ->setCellValue('I' . $kolom, $k->kd_kategori)
+                ->setCellValue('J' . $kolom, $k->kategori);
             $kolom++;
         }
 
         $kol = 3;
         foreach ($sdb as $k) {
             $sheet
-                ->setCellValue('M'.$kol,$k->kd_kategori)
-                ->setCellValue('N'.$kol,$k->kategori);
+                ->setCellValue('M' . $kol, $k->kd_kategori)
+                ->setCellValue('N' . $kol, $k->kategori);
             $kol++;
         }
-        
+
         $writer = new Xlsx($spreadsheet);
         $style = [
             'borders' => [
@@ -217,9 +218,9 @@ class MenuController extends Controller
         // tambah style
         $sheet->getStyle('A1:F10')->applyFromArray($style);
         $batas = count($tkm) + 2;
-        $sheet->getStyle('I1:J'.$batas)->applyFromArray($style);
+        $sheet->getStyle('I1:J' . $batas)->applyFromArray($style);
         $batas = count($sdb) + 2;
-        $sheet->getStyle('M1:N'.$batas)->applyFromArray($style);
+        $sheet->getStyle('M1:N' . $batas)->applyFromArray($style);
         // center
         $sheet->getStyle('I1')->getAlignment()->setHorizontal('center');
         $sheet->getStyle('M1')->getAlignment()->setHorizontal('center');
@@ -234,14 +235,16 @@ class MenuController extends Controller
 
     public function addMenu(Request $request)
     {
+        
+
         $menu = Menu::orderBy('kd_menu', 'desc')->where('lokasi', $request->id_lokasi)->first();
 
         $kd_menu = $menu->kd_menu + 1;
 
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
             $request->file('image')->move('assets/tb_menu/', $request->file('image')->getClientOriginalName());
-        $foto = $request->file('image')->getClientOriginalName();
-        }else{
+            $foto = $request->file('image')->getClientOriginalName();
+        } else {
             $foto = '';
         }
 
@@ -258,8 +261,11 @@ class MenuController extends Controller
 
         ];
 
+
         $menu = Menu::create($data1);
         $id_menu = $menu->id;
+
+
         $id_distribusi = $request->id_distribusi;
         $harga = $request->harga;
         for ($i = 0; $i < count($request->id_distribusi); $i++) {
@@ -272,7 +278,51 @@ class MenuController extends Controller
             Harga::create($data2);
         }
 
-        return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('sukses', 'Berhasiil tambah Menu');
+        // resep
+        $file = $request->file('file');
+        if(!empty($file)) {
+            $fileDiterima = ['xls', 'xlsx'];
+            $cek = in_array($file->getClientOriginalExtension(), $fileDiterima);
+            if ($cek) {
+                $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+                $spreadsheet = $reader->load($file);
+                $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+                $data = [];
+    
+                $numrow = 1;
+    
+                foreach ($sheet as $row) {
+                    if ($row['A'] == '' && $row['B'] == '') {
+                        continue;
+                    }
+                    if ($numrow > 1) {
+                        $dihalusi = Str::lower($row['A']);
+                        $bahan = DB::selectOne("SELECT a.id_list_bahan, a.nm_bahan, a.id_satuan FROM `tb_list_bahan` as a
+                        WHERE a.nm_bahan = '$dihalusi'");
+                        if(!empty($bahan)) {
+                            $data = [
+                                'id_menu' => $id_menu,
+                                'id_list_bahan' => $bahan->id_list_bahan,
+                                'id_satuan' => $bahan->id_satuan,
+                                'qty' => $row['B'],
+                                'admin' => Auth::user()->nama,
+                                'tgl' => date('Y-m-d')
+                            ];
+                            DB::table('tb_resep')->insert($data);
+                        } else {
+                            return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('error', 'Berhasiil tambah Menu tapi RESEP TIDAK ADA');
+                        }
+                        
+                    }
+                    $numrow++;
+                }
+                return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('sukses', 'Berhasiil tambah Menu');
+            } else {
+                return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('error', 'File tidak didukung');
+            }
+        }
+        return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('sukses', 'Berhasiil tambah Menu tanpa resep');
+
     }
 
     public function deleteMenu(Request $request)
@@ -309,6 +359,18 @@ class MenuController extends Controller
             Harga::where('id_harga', $request->id_harga[$i])->update($data2);
         }
 
+        for ($i = 0; $i < count($request->nm_bahan); $i++) {
+            $data = [
+                'id_menu' => $id_menu,
+                'id_list_bahan' => $request->nm_bahan[$i],
+                'id_satuan' => $request->id_satuan[$i],
+                'qty' => $request->grBahan[$i],
+                'admin' => Auth::user()->nama,
+                'qty' => $request->grBahan[$i],
+                'tgl' => date('Y-m-d')
+            ];
+            DB::table('tb_resep')->where('id_resep', $request->id_resep[$i])->update($data);
+        }
         return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('sukses', 'Berhasiil ubah Menu');
     }
 
@@ -341,5 +403,166 @@ class MenuController extends Controller
         } else {
             return back()->with('error', 'Distribusi sudah ada');
         }
+    }
+    public function tbhResep(Request $r)
+    {
+        $data = [
+            'c' => $r->c,
+            'bahan' => DB::table('tb_list_bahan')->where([['id_lokasi', $r->id_lokasi], ['jenis', 1]])->get(),
+            'satuan' => DB::table('tb_satuan')->whereIn('id_satuan', [12, 18, 22, 24, 25, 26])->get()
+        ];
+        return view('menu.tbhBahan', $data);
+    }
+
+    public function editMenu(Request $r)
+    {
+        $data = [
+            'id_menu' => $r->id_menu,
+            'menu' => DB::table('tb_menu')->select('tb_menu.*', 'tb_kategori.*')->join('tb_kategori', 'tb_menu.id_kategori', '=', 'tb_kategori.kd_kategori')->where('tb_menu.id_menu', $r->id_menu)->orderBy('tb_menu.id_menu', 'DESC')->first(),
+            'kategori' => DB::table('tb_kategori')->get(),
+            'distribusi' => Distribusi::all(),
+            'id_lokasi' => $r->id_lokasi,
+            'bahan' => DB::table('tb_list_bahan')->where([['jenis', 1], ['id_lokasi', 1]])->get(),
+            'satuan' => DB::table('tb_satuan')->whereIn('id_satuan', [12, 18, 22, 24, 25, 26])->get()
+        ];
+        return view('menu.editMenu', $data);
+    }
+
+    public function plusResep(Request $request)
+    {
+        // resep
+        $file = $request->file('file');
+        $fileDiterima = ['xls', 'xlsx'];
+        $cek = in_array($file->getClientOriginalExtension(), $fileDiterima);
+        if ($cek) {
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+            $spreadsheet = $reader->load($file);
+            $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+            $data = [];
+
+            $numrow = 1;
+
+            foreach ($sheet as $row) {
+                if ($row['A'] == '' && $row['B'] == '') {
+                    continue;
+                }
+                if ($numrow > 1) {
+                    $dihalusi = Str::lower($row['A']);
+                    $bahan = DB::selectOne("SELECT a.id_list_bahan, a.nm_bahan, a.id_satuan FROM `tb_list_bahan` as a
+                    WHERE a.nm_bahan = '$dihalusi'");
+                    if(!empty($bahan)) {
+                        $data = [
+                            'id_menu' => $request->id_menu,
+                            'id_list_bahan' => $bahan->id_list_bahan,
+                            'id_satuan' => $bahan->id_satuan,
+                            'qty' => $row['B'],
+                            'admin' => Auth::user()->nama,
+                            'tgl' => date('Y-m-d')
+                        ];
+                        DB::table('tb_resep')->insert($data);
+                    } else {
+                        return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('error', 'Berhasiil tambah Menu tapi RESEP TIDAK ADA');
+                    }
+                    
+                }
+                $numrow++;
+            }
+            return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('sukses', 'Berhasiil tambah Menu');
+        } else {
+            return redirect()->route('menu', ['id_lokasi' => $request->id_lokasi])->with('error', 'File tidak didukung');
+        }
+    }
+
+    public function formatResep()
+    {
+
+        $spreadsheet = new Spreadsheet();
+        $sheetIndex = $spreadsheet->getIndex($spreadsheet->getActiveSheet());
+        $spreadsheet->removeSheetByIndex($sheetIndex);
+
+        $sheet1 = $spreadsheet->createSheet();
+        $sheet1->setTitle("Format Import Resep");
+
+        $sheet2 = $spreadsheet->createSheet();
+        $sheet2->setTitle("List Bahan & Satuan");
+
+        // field -------------------
+        // format resep
+        $sheet1->setCellValue('A1', 'Nama Bahan')
+            ->setCellValue('B1', 'Qty');
+
+        // tb list bahan & satuan
+        $sheet2->setCellValue('A1', 'ID Bahan')
+            ->setCellValue('B1', 'Nama Bahan')
+            ->setCellValue('C1', 'Satuan')
+
+            ->setCellValue('F1', 'TB Satuan')
+            ->setCellValue('G1', 'ID Satuan')
+            ->setCellValue('H1', 'Satuan');
+        // end field -----------------------------
+
+        // isi kolom -----------------------
+        $bahan = DB::select("SELECT b.id_bahan, a.nm_bahan, c.nm_satuan, b.debit, b.kredit FROM `tb_list_bahan` as a
+            LEFT JOIN stok_ts as b ON a.id_list_bahan = b.id_bahan
+            LEFT JOIN tb_satuan as c ON a.id_satuan = c.id_satuan GROUP BY a.id_list_bahan");
+
+        $satuan = DB::table('tb_satuan')->get();
+        $kol = 2;
+        foreach ($bahan as $b) {
+            $sheet2->setCellValue("A$kol", $b->id_bahan)
+                ->setCellValue("B$kol", $b->nm_bahan)
+                ->setCellValue("C$kol", $b->nm_satuan);
+            $kol++;
+        }
+
+        $kol2 = 2;
+        foreach ($satuan as $d) {
+            $sheet2->setCellValue("G$kol2", $d->id_satuan);
+            $sheet2->setCellValue("H$kol2", $d->nm_satuan);
+            $kol2++;
+        }
+        // end kolom ------------------------
+
+        // style excel ---------------
+        $sheet1->getColumnDimension('A')->setWidth(15);
+        $sheet1->getColumnDimension('B')->setWidth(20);
+        $sheet1->getColumnDimension('C')->setWidth(15);
+
+        // font bold
+        $sheet1->getStyle('A1:B1')->getFont()->setBold(true);
+        $sheet2->getStyle('A1:C1')->getFont()->setBold(true);
+        $sheet2->getStyle('F1:H1')->getFont()->setBold(true);
+
+        $style = [
+            'borders' => [
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN
+                ],
+            ],
+        ];
+
+        // style bold baris
+        $sheet1->getStyle('A1:C2')->applyFromArray($style);
+        $batas1 = count($bahan) + 1;
+        $sheet2->getStyle('A1:C' . $batas1)->applyFromArray($style);
+
+        $batas2 = count($satuan) + 1;
+        $sheet2->getStyle('G1:H' . $batas2)->applyFromArray($style);
+
+        // center
+        $sheet1->getStyle('A1:C2')->getAlignment()->setHorizontal('center');
+        // end style ------------------
+
+        $writer = new Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="Format Resep Menu.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
     }
 }

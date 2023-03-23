@@ -316,13 +316,10 @@
                                 }
                                 
                                 $idl = [];
-                                $limit = DB::select("SELECT tb_menu.id_menu as id_menu FROM tb_menu
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        LEFT JOIN(SELECT SUM(qty) as jml_jual, tb_harga.id_menu FROM tb_order LEFT JOIN tb_harga ON tb_order.id_harga = tb_harga.id_harga WHERE tb_order.id_lokasi = $id_lokasi AND tb_order.tgl = '$tgl' AND tb_order.void = 0 GROUP BY tb_harga.id_menu) dt_order ON tb_menu.id_menu = dt_order.id_menu
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        LEFT JOIN(SELECT id_menu,batas_limit FROM tb_limit WHERE tgl = '$tgl' AND id_lokasi = $id_lokasi GROUP BY id_menu)dt_limit ON tb_menu.id_menu = dt_limit.id_menu
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        WHERE lokasi = $id_lokasi AND dt_order.jml_jual >= dt_limit.batas_limit");
-                                foreach ($limit as $l) {
-                                    $idl[] = $l->id_menu;
-                                }
+                                // $limit = DB::select("SELECT tb_menu.id_menu as id_menu FROM tb_menu                                                    WHERE lokasi = $id_lokasi AND dt_order.jml_jual >= dt_limit.batas_limit");
+                                // foreach ($limit as $l) {
+                                //     $idl[] = $l->id_menu;
+                                // }
                             @endphp
                             @foreach ($kategori as $k)
                                 <div class="tab-pane fade" id="{{ $k->ket }}" role="tabpanel"
@@ -687,7 +684,17 @@
                                 title: 'Data berhasil ditambahkan'
                             });
                             load_cart();
-                        } else {
+                        } else if(data == 'stok kurang') {
+                            $('.modal-cart').modal('hide');
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                icon: 'error',
+                                title: 'Menu tidak cukup stok sesuai resep'
+                            });
+                        }else {
                             Swal.fire({
                                 toast: true,
                                 position: 'top-end',

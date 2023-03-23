@@ -147,7 +147,7 @@
                 $majo_hide = DB::select("SELECT a.*, c.nm_produk
                 FROM tb_pembelian AS a
                 LEFT JOIN tb_produk AS c ON c.id_produk = a.id_produk
-                WHERE a.no_meja = '$m->id_meja' AND a.lokasi = '$loc' and a.selesai = 'selesai'
+                WHERE a.no_meja = '$m->id_meja' AND a.lokasi = '$loc' and a.selesai = 'selesai' and a.no_nota = '$m->no_order'
                 GROUP BY a.id_pembelian");
         ?>
         @foreach ($menu2 as $m)

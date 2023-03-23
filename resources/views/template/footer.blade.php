@@ -9,6 +9,7 @@
 <!-- REQUIRED SCRIPTS -->
 
 <!-- jQuery -->
+
 <script src="{{ asset('public/assets') }}/plugins/jquery/jquery.min.js"></script>
 <!-- Bootstrap 4 -->
 <script src="{{ asset('public/assets') }}/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -152,6 +153,7 @@
     });
 </script>
 @yield('script')
+@livewireScripts
 </body>
 
 </html>

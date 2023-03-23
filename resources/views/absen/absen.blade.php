@@ -1,5 +1,6 @@
 @extends('template.master')
 @section('content')
+
     <div class="content-wrapper">
         <div class="content-header">
             <div class="container-fluid">
@@ -57,7 +58,6 @@
                 <div class="row">
 
                     <div class="col-md-12">
-
                         <div id="badan">
 
                         </div>

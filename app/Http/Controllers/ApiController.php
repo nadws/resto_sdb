@@ -157,23 +157,6 @@ class ApiController extends Controller
     }
     public function tb_transaksi()
     {
-        // tb produk majo
-        $tb_produk_majo = DB::table('tb_produk')->where([['id_lokasi' , 1]])->get();
-        $id_produk_majo = [];
-        $datap = [];
-        foreach ($tb_produk_majo as $t) {
-            $id_produk_majo[] = $t->id_produk;
-            array_push($datap, [
-                'stok' => $t->stok,
-                'id_produk' => $t->id_produk,
-                'id_lokasi' => $t->id_lokasi,
-            ]);
-        }
-        // dd($datap);
-        $response = Http::acceptJson()->post('https://ptagafood.com/api/tb_produk_majo', $datap);
-        
-
-
         $tb_invoice = DB::table('tb_invoice')->where('import', 'T')->get();
         $id_invoice = [];
         $data_invoice = [];
@@ -263,6 +246,23 @@ class ApiController extends Controller
 
 
         return redirect()->route('sukses')->with('sukses', 'Sukses');
+    }
+
+    public function export_majo(Request $r)
+    {
+        $tb_produk_majo = DB::table('tb_produk')->where([['id_lokasi' , 1]])->get();
+         $id_produk_majo = [];
+         $datap = [];
+         foreach ($tb_produk_majo as $t) {
+             $id_produk_majo[] = $t->id_produk;
+             array_push($datap, [
+                 'stok' => $t->stok,
+                 'id_produk' => $t->id_produk,
+                 'id_lokasi' => $t->id_lokasi,
+             ]);
+         }
+         // dd($datap);
+         $response = Http::acceptJson()->post('https://ptagafood.com/api/tb_produk_majo', $datap);
     }
 
     public function tb_order2()

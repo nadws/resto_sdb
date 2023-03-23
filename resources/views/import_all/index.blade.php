@@ -3,10 +3,11 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container">
-            <div class="row mb-2 justify-content-center">
+            <div class="row justify-content-center">
                 <div class="col-sm-12">
                     <center>
                         <h4 style="color: #787878; font-weight: bold;">Export Table</h4>
+                       
                     </center>
 
                 </div><!-- /.col -->
@@ -22,10 +23,23 @@
             font-size: larger;
             font-weight: bold;
         }
+        .cekClearup {
+            pointer-events: none
+        }
     </style>
     <div class="content">
         <br>
         <div class="container-fluid">
+            @if ($cekClearup == 'tidak')    
+            <div class="alert alert-danger text-center" role="alert">
+                Meja harus di clear up sebelum export data <a href="{{ route('meja') }}" class="alert-link">Meja</a>.
+            </div>
+            @endif
+            <div class="row mt-4">
+                <div class="col-lg-4">
+                    <center><img src="" alt=""></center>
+                </div>
+            </div>
             <div class="row mt-4">
                 <div class="col-lg-4">
                     <center>
@@ -40,7 +54,7 @@
                         <?php if(empty($tb_order->import)): ?>
                         <p class="text-success">Data sudah di export <i class="fas fa-check"></i></p>
                         <?php else: ?>
-                        <a href="{{route('tb_order1')}}" class="btn btn-info" id="export1">export</a>
+                        <a href="{{route('tb_order1')}}" class="btn {{ $cekClearup == 'tidak' ? 'cekClearup btn-danger' : 'btn-info' }}" id="export1">export</a>
                         <button class="btn btn-info save_loading1" type="button" disabled>
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                             Loading...
@@ -114,6 +128,17 @@
                             Loading...
                         </button>
                         <?php endif ?>
+                    </center>
+                </div>
+                <div class="col-lg-4 mt-4">
+                    <h3 class="text-bold text-center">STK Majoo</h3>
+                    <center>
+                        <br>
+                        <a href="{{ route('export_majo') }}" class="btn btn-info" id="export11">export</a>
+                        <button class="btn btn-info save_loading11" type="button" disabled>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </button>
                     </center>
                 </div>
                 <div class="col-lg-4 mt-4">
@@ -229,6 +254,7 @@
         $('.save_loading8').hide();
         $('.save_loading9').hide();
         $('.save_loading10').hide();
+        $('.save_loading11').hide();
         $(document).on('click', '#export1', function() {
             //   event.preventDefault();
 
@@ -299,6 +325,13 @@
             $('.save_loading10').show();
 
         });
+        $(document).on('click', '#export11', function() {
+              event.preventDefault();
+            $('#export11').hide();
+            $('.save_loading11').show();
+
+        });
+
 });
 </script>
 

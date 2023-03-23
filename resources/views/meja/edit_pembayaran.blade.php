@@ -1,5 +1,5 @@
 <?php
-$total_tagihan = $dt_pembayaran->total_orderan + $dt_pembayaran->service + $dt_pembayaran->tax + $dt_pembayaran->round - $dt_pembayaran->discount - $dt_pembayaran->voucher - $dt_pembayaran->dp; ?>
+$total_tagihan = $dt_pembayaran->total_orderan + $dt_majo->total + $dt_pembayaran->service + $dt_pembayaran->tax + $dt_pembayaran->round - $dt_pembayaran->discount - $dt_pembayaran->voucher - $dt_pembayaran->dp; ?>
 <div class="row">
     <input type="hidden" id="no_order" name="no_order" value="<?= $no_order ?>">
 
@@ -8,7 +8,7 @@ $total_tagihan = $dt_pembayaran->total_orderan + $dt_pembayaran->service + $dt_p
             <label>Total Tagihan</label>
             <input type="number" class="form-control" id="total_tagihan" value="<?= $total_tagihan ?>" disabled>
         </div>
-    </div>
+</div>
 
     <div class="col-12">
         <div class="form-group">

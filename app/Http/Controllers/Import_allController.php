@@ -28,8 +28,11 @@ class Import_allController extends Controller
             return back();
         } else {
             $date = date('Y-m-d');
+            $cekClearup = Orderan::where([['tgl', $date],['aktif', '!=', 2]])->count() < 1 ? 'selesai' : 'tidak';
+            
             $data = [
                 'title' => 'Import',
+                'cekClearup' => $cekClearup,
                 'logout' => $request->session()->get('logout'),
                 'tb_order' => Orderan::where('import', 'T')->where('tgl', '<=', $date)->first(),
                 'tb_order2' => Order2::where('import', 'T')->where('tgl', '<=', $date)->first(),

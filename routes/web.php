@@ -46,6 +46,8 @@ use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Point_masak;
 use App\Http\Controllers\Kom_server;
+use App\Http\Controllers\KpiController;
+use App\Http\Controllers\viewKomServerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -139,7 +141,36 @@ Route::post('/editMenuCheck', [MenuController::class, 'editMenuCheck'])->name('e
 Route::post('/plusDistribusi', [MenuController::class, 'plusDistribusi'])->name('plusDistribusi')->middleware('auth');
 Route::post('/importMenu', [MenuController::class, 'importMenu'])->name('importMenu')->middleware('auth');
 Route::get('/exportMenu', [MenuController::class, 'exportMenu'])->name('exportMenu')->middleware('auth');
-// -----------------------------------------------                
+Route::get('/tbhResep', [MenuController::class, 'tbhResep'])->name('tbhResep')->middleware('auth');
+Route::get('/editMenu', [MenuController::class, 'editMenu'])->name('editMenu')->middleware('auth');
+Route::post('/plusResep', [MenuController::class, 'plusResep'])->name('plusResep')->middleware('auth');
+Route::get('/formatResep', [MenuController::class, 'formatResep'])->name('formatResep')->middleware('auth');
+// -----------------------------------------------           
+
+// view komisi server
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/viewKomServer', [viewKomServerController::class, 'index'])->name('viewKomServer');
+    Route::get('/loadTakemori', [viewKomServerController::class, 'loadTakemori'])->name('loadTakemori');
+    Route::get('/loadSoondobu', [viewKomServerController::class, 'loadSoondobu'])->name('loadSoondobu');
+    Route::get('/apiKom', [viewKomServerController::class, 'apiKom'])->name('apiKom');
+    Route::get('/kpi', [KpiController::class, 'index'])->name('kpi');
+    
+    Route::get('/subKategori', [KpiController::class, 'subKategori'])->name('subKategori');
+    Route::post('/saveDendaKpi', [KpiController::class, 'saveDendaKpi'])->name('saveDendaKpi');
+    Route::get('/kategoriKpi', [KpiController::class, 'kategoriKpi'])->name('kategoriKpi');
+    Route::post('/saveKategoriKpi', [KpiController::class, 'saveKategoriKpi'])->name('saveKategoriKpi');
+    Route::get('/hapusKategoriKpi/{jenis}/{id}', [KpiController::class, 'hapusKategoriKpi'])->name('hapusKategoriKpi');
+    Route::post('/saveSetKpi', [KpiController::class, 'saveSetKpi'])->name('saveSetKpi');
+    Route::post('/editKategoriKpi', [KpiController::class, 'editKategoriKpi'])->name('editKategoriKpi');
+    Route::get('/sub_kategori', [KpiController::class, 'sub_kategori'])->name('sub_kategori');
+    Route::get('/save_sub_kategori', [KpiController::class, 'save_sub_kategori'])->name('save_sub_kategori');
+    Route::get('/save_tambah_sub_kategori', [KpiController::class, 'save_tambah_sub_kategori'])->name('save_tambah_sub_kategori');
+    Route::get('/delete_subkategori', [KpiController::class, 'delete_subkategori'])->name('delete_subkategori');
+});
+
+
+
 
 Route::get('/karyawan', [KaryawanController::class, 'index'])->name('karyawan')->middleware('auth');
 Route::post('/addKaryawan', [KaryawanController::class, 'addKaryawan'])->name('addKaryawan')->middleware('auth');
@@ -262,6 +293,8 @@ Route::get('/void', [VoidController::class, 'index'])->name('void');
 Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
 Route::get('/summary', [LaporanController::class, 'summary'])->name('summary');
 Route::get('/item', [LaporanController::class, 'item'])->name('item');
+Route::get('/itemMajo', [LaporanController::class, 'itemMajo'])->name('itemMajo');
+Route::get('/export_itemMajo', [LaporanController::class, 'export_itemMajo'])->name('export_itemMajo');
 Route::get('/get_telat', [LaporanController::class, 'get_telat'])->name('get_telat');
 Route::get('/get_ontime', [LaporanController::class, 'get_ontime'])->name('get_ontime');
 Route::get('/export_item', [LaporanController::class, 'export_item'])->name('export_item');
@@ -310,6 +343,7 @@ Route::get('/clear', [MejaController::class, 'clear'])->name('clear');
 Route::get('/get_karyawan', [MejaController::class, 'get_karyawan'])->name('get_karyawan');
 
 Route::get('/point_masak', [Point_masak::class, 'index'])->name('point_masak');
+Route::get('/detailPoint', [Point_masak::class, 'detailPoint'])->name('detailPoint');
 Route::get('/point_export', [Point_masak::class, 'point_export'])->name('point_export');
 
 Route::get('/kom_server', [Kom_server::class, 'index'])->name('kom_server');
@@ -371,6 +405,7 @@ Route::get('/tb_denda', [ApiController::class, 'tb_denda'])->name('tb_denda');
 Route::get('/tb_kasbon', [ApiController::class, 'tb_kasbon'])->name('tb_kasbon');
 Route::get('/tb_jurnal', [ApiController::class, 'tb_jurnal'])->name('tb_jurnal');
 Route::get('/tb_invoice_hapus', [ApiController::class, 'tb_invoice_hapus'])->name('tb_invoice_hapus');
+Route::get('/export_majo', [ApiController::class, 'export_majo'])->name('export_majo');
 
 
 Route::get('/download', [DownloadController::class, 'index'])->name('download');
@@ -380,6 +415,7 @@ Route::get('/i_menu', [DownloadController::class, 'menu'])->name('i_menu');
 Route::get('/i_karyawan', [DownloadController::class, 'karyawan'])->name('i_karyawan');
 Route::get('/i_user', [DownloadController::class, 'user'])->name('i_user');
 Route::get('/tb_voucher_hapus', [DownloadController::class, 'tb_voucher_hapus'])->name('tb_voucher_hapus');
+Route::get('/tb_majo', [DownloadController::class, 'tb_majo'])->name('tb_majo');
 
 
 Route::get('/sukses', [ApiController::class, 'sukses'])->name('sukses');
@@ -395,13 +431,13 @@ Route::get('/hapus_voucher_hapus', [Voucher_hapusController::class, 'hapus_vouch
 
 
 // MAJOO
+Route::get('/produk', [OrderController::class, 'produk'])->name('produk');
+
 Route::get('/get_majo', [OrderController::class, 'get_majo'])->name('get_majo');
 Route::get('/search_majo', [OrderController::class, 'cari_majo'])->name('search_majo');
 Route::get('/item_menu_majoo', [OrderController::class, 'get_harga_majoo'])->name('item_menu_majoo');
 Route::get('/get_karyawan_majo', [OrderController::class, 'get_karyawan'])->name('get_karyawan_majo');
 Route::get('/cart_majoo', [OrderController::class, 'cart_majoo'])->name('cart_majoo');
-
-
 //
 
 Route::post('/meja_selesai_majo', [MejaController::class, 'meja_selesai_majo'])->name('meja_selesai_majo');

@@ -133,7 +133,7 @@ class HeadController extends Controller
         LEFT JOIN tb_distribusi AS b ON b.id_distribusi = a.id_distribusi
         left join tb_meja as d on d.id_meja = a.id_meja
         LEFT JOIN tb_transaksi AS c ON c.no_order = a.no_order
-        WHERE a.aktif = '1' AND a.id_lokasi = '$lokasi' and a.id_distribusi = '$id_distribusi'
+        WHERE a.aktif = '1' AND a.id_lokasi = '$lokasi' and a.id_distribusi = '$id_distribusi' AND a.void = 0
         group by a.no_order order by a.id_distribusi , a.id_meja ASC
         ");
 

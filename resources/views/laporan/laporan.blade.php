@@ -54,8 +54,9 @@
                                         <select name="" id="kategori" class="form-control select2bs4">
                                             <option value="1">SUMMARY</option>
                                             <option value="2">PER-ITEM</option>
-                                            <option value="3">PENJUALAN SERVER</option>
-                                            <option value="4">JAM MASAK DAPUR</option>
+                                            <option value="3">PER-MAJOO</option>
+                                            {{-- <option value="3">PENJUALAN SERVER</option>
+                                            <option value="4">JAM MASAK DAPUR</option> --}}
                                         </select>
                                     </div>
 
@@ -115,7 +116,7 @@
                     </button>
                 </div>
                 <div class="modal-body" id="form_pesanan_koki_masak">
-
+                
                 </div>
                 <!-- <div class="modal-footer">
                                 <button type="button" class="btn btn-costume" data-dismiss="modal">Close</button>
@@ -168,7 +169,7 @@
                     $('#data-server').hide();
                     $('#data-masak').hide();
                 } else if(kat == '3') {
-                    var url = "<?= route('server') ?>?tgl1=" + tgl1 + '&tgl2=' + tgl2;
+                    var url = "<?= route('itemMajo') ?>?tgl1=" + tgl1 + '&tgl2=' + tgl2;
                     $('#data-server').show();
                     $('#data-server').load(url);
                     $('#data-laporan').hide();

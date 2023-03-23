@@ -243,7 +243,7 @@ class MejaController extends Controller
         $no_order = $request->no_order;
 
         $data = [
-            'cash' => $request->cash,
+            'cash' => $request->cash, 
             'd_bca' => $request->d_bca,
             'k_bca' => $request->k_bca,
             'd_mandiri' => $request->d_mandiri,
@@ -261,6 +261,7 @@ class MejaController extends Controller
         $no_order = $request->no_order;
         $data = [
             'dt_pembayaran' => Transaksi::where('no_order', $no_order)->first(),
+            'dt_majo' => DB::table('tb_invoice')->where('no_nota', $no_order)->first(),
             'no_order' => $no_order
         ];
         return view('meja.edit_pembayaran', $data);
@@ -760,9 +761,43 @@ class MejaController extends Controller
         $id_dis = $request->id;
 
         if ($id_dis == '1' || $id_dis == '3') {
-            $produk =  DB::table('tb_produk')->where('id_lokasi', "$lokasi")->where('id_kategori', '!=', '11')->where('stok', '>', '0')->get();
+            $produk =  DB::select("SELECT a.id_produk, a.komisi,  a.nm_produk, a.sku, a.harga, b.satuan , c.nm_kategori, a.id_lokasi, d.debit, d.kredit,e.kredit_penjualan
+            FROM tb_produk AS a
+            LEFT JOIN tb_satuan_majo AS b ON b.id_satuan = a.id_satuan
+            LEFT JOIN tb_kategori_majo AS c ON c.id_kategori = a.id_kategori
+            
+            LEFT JOIN (
+            SELECT d.id_produk, SUM(d.debit) AS debit, SUM(d.kredit) AS kredit
+            FROM tb_stok_produk AS d 
+            GROUP BY d.id_produk
+            ) AS d ON d.id_produk = a.id_produk
+
+            LEFT JOIN (
+            SELECT e.id_produk , SUM(e.jumlah) AS kredit_penjualan
+            FROM tb_pembelian AS e 
+            GROUP BY e.id_produk
+            )AS e ON e.id_produk = a.id_produk
+            
+            WHERE a.id_lokasi = '$lokasi' and a.id_kategori != '11' ");
         } else {
-            $produk =  DB::table('tb_produk')->where('id_lokasi', "$lokasi")->where('id_kategori', '=', '11')->where('stok', '>', '0')->get();
+            $produk =  DB::select("SELECT a.id_produk, a.komisi,  a.nm_produk, a.sku, a.harga, b.satuan , c.nm_kategori, a.id_lokasi, d.debit, d.kredit,e.kredit_penjualan
+            FROM tb_produk AS a
+            LEFT JOIN tb_satuan_majo AS b ON b.id_satuan = a.id_satuan
+            LEFT JOIN tb_kategori_majo AS c ON c.id_kategori = a.id_kategori
+            
+            LEFT JOIN (
+            SELECT d.id_produk, SUM(d.debit) AS debit, SUM(d.kredit) AS kredit
+            FROM tb_stok_produk AS d 
+            GROUP BY d.id_produk
+            ) AS d ON d.id_produk = a.id_produk
+
+            LEFT JOIN (
+            SELECT e.id_produk , SUM(e.jumlah) AS kredit_penjualan
+            FROM tb_pembelian AS e 
+            GROUP BY e.id_produk
+            )AS e ON e.id_produk = a.id_produk
+            
+            WHERE a.id_lokasi = '$lokasi' and a.id_kategori = '11' ");
         }
         $order = DB::table('tb_order')
             ->where('no_order', $no_order)
@@ -777,7 +812,6 @@ class MejaController extends Controller
 
         return view('meja.tbh_menu_majo', $data)->render();
     }
-
     public function save_pesanan_majo(Request $r)
     {
         $kd_order = $r->kd_order;
@@ -822,17 +856,6 @@ class MejaController extends Controller
             'aktif' => '1',
         ];
         Orderan::create($data2);
-
-        // $data_invoice = [
-        //     'no_nota' => $kd_order,
-        //     'total' => $qty_majo * $hrg_majo,
-        //     'tgl_jam' => date('Y-m-d'),
-        //     'tgl_input' => date('Y-m-d H:i:s'),
-        //     'admin' => $admin,
-        //     'lokasi' => $lokasi,
-        //     'no_meja' => $meja
-        // ];
-        // DB::table('tb_invoice')->insert($data_invoice);
 
         $stok_baru = [
             'stok' => $d_produk->stok -  $qty_majo

@@ -280,5 +280,94 @@ group by d.id_order) as e on e.id_order = a.id_order
         return view('laporan.server_detail', $data);
     }
 
+    public function itemMajo(Request $r)
+    {
+        $loc = $r->session()->get('id_lokasi');
+        $tgl1 = $r->tgl1;
+        $tgl2 = $r->tgl2;
+        $data = [
+            'title'    => 'Summary',
+            'tgl1' => $tgl1,
+            'tgl2' => $tgl2,
+
+            'kategori' => DB::select("SELECT b.nm_produk, b.harga, SUM(a.jumlah) as qty FROM `tb_pembelian` as a
+            LEFT JOIN tb_produk as b ON a.id_produk = b.id_produk
+            WHERE a.tanggal BETWEEN '$tgl1' AND '$tgl2' AND a.lokasi = '$loc' GROUP BY a.id_produk;")
+        ];
+        return view('laporan.itemMajo', $data);
+    }
+
+    public function export_itemMajo(Request $r)
+    {
+        $loc = $r->session()->get('id_lokasi');
+        $tgl1 = $r->tgl1;
+        $tgl2 = $r->tgl2;
+
+        $dt_item = DB::select("SELECT b.nm_produk, b.harga, SUM(a.jumlah) as qty FROM `tb_pembelian` as a
+        LEFT JOIN tb_produk as b ON a.id_produk = b.id_produk
+        WHERE a.tanggal BETWEEN '$tgl1' AND '$tgl2' AND a.lokasi = '$loc' GROUP BY a.id_produk");
+
+        $spreadsheet = new Spreadsheet;
+
+        $spreadsheet->setActiveSheetIndex(0);
+
+        $spreadsheet->getActiveSheet()->setCellValue('A1', '#');
+        $spreadsheet->getActiveSheet()->setCellValue('B1', 'Nama Menu');
+        $spreadsheet->getActiveSheet()->setCellValue('C1', 'Qty');
+        $spreadsheet->getActiveSheet()->setCellValue('D1', 'Subtotal');
+
+        $style = array(
+            'font' => array(
+                'size' => 9
+            ),
+            'borders' => array(
+                'allBorders' => array(
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                ),
+            ),
+            'alignment' => array(
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ),
+        );
+
+        $spreadsheet->getActiveSheet()->getStyle('A1:D1')->applyFromArray($style);
+
+
+        $spreadsheet->getActiveSheet()->getStyle('A1:D1')->getAlignment()->setWrapText(true);
+
+
+        $kolom = 2;
+        $no = 1;
+        foreach ($dt_item as $d) {
+            $spreadsheet->setActiveSheetIndex(0);
+            $spreadsheet->getActiveSheet()->setCellValue('A' . $kolom, $no++);
+            $spreadsheet->getActiveSheet()->setCellValue('B' . $kolom, $d->nm_produk);
+            $spreadsheet->getActiveSheet()->setCellValue('C' . $kolom, $d->qty);
+            $spreadsheet->getActiveSheet()->setCellValue('D' . $kolom, $d->qty * $d->harga);
+            $kolom++;
+        }
+
+        $border_collom = array(
+            'borders' => array(
+                'outline' => array(
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                ),
+            )
+        );
+
+        $batas = $kolom - 1;
+        $spreadsheet->getActiveSheet()->getStyle('A1:D' . $batas)->applyFromArray($style);
+
+        $writer = new Xlsx($spreadsheet);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="Laporan Per Item Majo.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+    }
+    
     
 }
